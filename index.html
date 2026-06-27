@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Plumber Chronicles: Perfected Edition</title>
+    <style>
+        :root {
+            --bg-dark: radial-gradient(circle at center, #1a1c30 0%, #080914 100%);
+            --mario-red: #e52521;
+            --mario-blue: #002fbe;
+            --coin-gold: #FFD700;
+            --glass-panel: rgba(10, 12, 26, 0.95);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            color: #ffffff;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .ui-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--glass-panel);
+            backdrop-filter: blur(25px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 15;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .title-logo {
+            font-size: 64px;
+            font-weight: 900;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--mario-red) 0%, #ff6b81 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 15px rgba(229, 37, 33, 0.4));
+        }
+        .title-logo span {
+            background: linear-gradient(135deg, #00d2ff 0%, #00a8ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #a4b0be;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 40px;
+            letter-spacing: 1.5px;
+        }
+
+        .roadmap-container {
+            position: relative;
+            width: 85%;
+            max-width: 850px;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 35px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            overflow: visible;
+        }
+
+        .road-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .node-btn {
+            position: absolute;
+            background: #1e272e;
+            border: 3px solid #ffb800;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
+            transform: translate(-50%, -50%);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .node-btn span {
+            font-weight: 900;
+            font-size: 16px;
+            color: #fff;
+        }
+        .node-btn label {
+            position: absolute;
+            top: 68px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #ced6e0;
+            white-space: nowrap;
+        }
+
+        .node-btn:hover {
+            transform: translate(-50%, -58px) scale(1.15);
+            border-color: var(--mario-red);
+            box-shadow: 0 0 25px rgba(229, 37, 33, 0.6);
+            background: #2f3542;
+        }
+        .node-btn:hover label {
+            color: var(--mario-red);
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--mario-red) 0%, #ff5252 100%);
+            border: none;
+            color: #fff;
+            padding: 16px 52px;
+            font-size: 17px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(229, 37, 33, 0.4);
+            transition: all 0.2s ease;
+        }
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 35px rgba(229, 37, 33, 0.5);
+        }
+
+        #hud-overlay {
+            position: absolute;
+            top: 25px;
+            left: 30px;
+            right: 30px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .hud-widget {
+            background: rgba(12, 14, 28, 0.85);
+            padding: 10px 22px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .hud-widget span {
+            color: #00d2ff;
+        }
+        .hud-widget var {
+            color: var(--coin-gold);
+            font-style: normal;
+        }
+        .hud-widget val {
+            color: var(--mario-red);
+            font-style: normal;
+        }
+
+        #homework-footer {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 1px;
+            z-index: 20;
+            pointer-events: none;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="hud-overlay">
+            <div class="hud-widget">STAGE <span id="hud-lvl">1</span></div>
+            <div class="hud-widget">COINS <var id="hud-coins">00</var> / <var id="hud-total-coins">00</var></div>
+            <div class="hud-widget">STATUS <span id="hud-status" style="color:#ffb800;">SMALL</span></div>
+            <div class="hud-widget">LIVES <val id="hud-lives">3</val></div>
+        </div>
+
+        <div id="splash-screen" class="ui-screen">
+            <h1 class="title-logo">Super <span>Plumber</span></h1>
+            <p class="subtitle">Data Science Winter Holiday Homework Project Module</p>
+            <button class="primary-btn" onclick="showRoadmap()">PLAY GAME</button>
+        </div>
+
+        <div id="roadmap-screen" class="ui-screen" style="display:none;">
+            <h1 class="title-logo" style="font-size: 36px; margin-bottom: 5px;">Level <span>Roadmap</span></h1>
+            <p class="subtitle" style="margin-bottom: 40px; color:#ffd32a; font-weight:700;">⭐ Collect every single coin to unlock the flagpole! ⭐</p>
+
+            <div class="roadmap-container">
+                <svg class="road-svg" viewBox="0 0 1000 320" preserveAspectRatio="none">
+                    <path d="M 100 240 C 200 240, 200 80, 350 80 C 500 80, 500 160, 500 160 C 500 160, 500 240, 680 240 C 780 240, 800 150, 900 89.6"
+                          fill="none" stroke="#57606f" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M 100 240 C 200 240, 200 80, 350 80 C 500 80, 500 160, 500 160 C 500 160, 500 240, 680 240 C 780 240, 800 150, 900 89.6"
+                          fill="none" stroke="#ffd32a" stroke-width="4" stroke-dasharray="10,10" stroke-linecap="round"/>
+                </svg>
+
+                <button class="node-btn" style="left: 10%; top: 75%;" onclick="launchGameLevel(0)"><span>01</span><label>World Start</label></button>
+                <button class="node-btn" style="left: 35%; top: 25%;" onclick="launchGameLevel(1)"><span>02</span><label>Pipe Valley</label></button>
+                <button class="node-btn" style="left: 50%; top: 50%;" onclick="launchGameLevel(2)"><span>03</span><label>Sky Leap</label></button>
+                <button class="node-btn" style="left: 68%; top: 75%;" onclick="launchGameLevel(3)"><span>04</span><label>Midnight Run</label></button>
+                <button class="node-btn" style="left: 90%; top: 28%;" onclick="launchGameLevel(4)"><span>05</span><label>The Fortress</label></button>
+            </div>
+
+            <div style="font-size:12px; color:#a4b0be; font-weight:600;">Controls: [A, D / Arrow Left-Right] Move &bull; [W, Space, Arrow Up] Jump</div>
+        </div>
+
+        <div id="gameover-screen" class="ui-screen" style="display:none;">
+            <h1 style="color:var(--mario-red); font-size:48px; font-weight:900; margin:0;">GAME OVER</h1>
+            <p class="subtitle">All reserve attempts depleted.</p>
+            <button class="primary-btn" onclick="backToMapHub()">RETURN TO ROADMAP</button>
+        </div>
+
+        <div id="win-screen" class="ui-screen" style="display:none;">
+            <h1 style="color:var(--coin-gold); font-size:54px; font-weight:900; margin:0;">STAGE CLEAR!</h1>
+            <p class="subtitle" style="color:#fff; font-weight:700;">100% Coins Gathered Perfectly!</p>
+            <button class="primary-btn" id="next-action-btn" onclick="advanceNextSequence()">CONTINUE</button>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+        <div id="homework-footer">Made By Ishan Pal X - F, Data science Holiday HW</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const VIRTUAL_HEIGHT = 480;
+        let viewScale = 1;
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+
+            viewScale = window.innerHeight / VIRTUAL_HEIGHT;
+            ctx.scale(dpr * viewScale, dpr * viewScale);
+            ctx.imageSmoothingEnabled = false;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const TILE_SIZE = 32;
+        const GRAVITY = 0.55;
+        const FRICTION = 0.83;
+
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        function sound(freq, type, duration, delay = 0) {
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + delay);
+                osc.stop(audioCtx.currentTime + delay + duration);
+            } catch (e) {}
+        }
+
+        let player = {
+            x: 100,
+            y: 300,
+            w: 20,
+            h: 32,
+            vx: 0,
+            vy: 0,
+            speed: 4.6,
+            jumpForce: 12.3,
+            grounded: false,
+            facing: 'right',
+            walkFrame: 0,
+            isSuper: false,
+            invincibleTimer: 0
+        };
+
+        let currentLevelIndex = 0;
+        let globalCoins = 0;
+        let totalLevelCoins = 0;
+        let globalLives = 3;
+        let gameState = 'splash';
+        let cameraX = 0;
+        let levelMapWidth = 0;
+
+        let tiles = [];
+        let enemies = [];
+        let coins = [];
+        let items = [];
+        let platforms = [];
+        let floatingTexts = [];
+        let flagPole = { x: 0, y: 0 };
+
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            initAudio();
+            keys[e.key.toLowerCase()] = true;
+        });
+        window.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        const mapsData = [
+            [
+                "                                                                       ",
+                "                                                                       ",
+                "                                                                       ",
+                "                                                                       ",
+                "                                                                       ",
+                "                                                                       ",
+                "                                                                       ",
+                "                                                                       ",
+                "                 B?M?B                               C  C              ",
+                "                                    B?B       BBBBBB                   ",
+                "                            P                                          ",
+                "                            p                                        F ",
+                "       C       C            p     E                                  G ",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGG"
+            ],
+            [
+                "                                                                                                    ",
+                "                                                                                                    ",
+                "                                                                                                    ",
+                "                                                                                                    ",
+                "                             B?M?B                                                                  ",
+                "                                                                          C C                       ",
+                "                        P             P         P                        HHHHH                      ",
+                "                        p             p         p             BB                                    ",
+                "                        p             p         p            BBB                                  F ",
+                "                  C     p    E        p    E    p           BBBB                  E               G ",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+            ],
+            [
+                "                                                                                                                                            ",
+                "                                                                                                                                            ",
+                "                                                                                                                                            ",
+                "                                                                   B?M?B                                                                    ",
+                "                                                    C C C         BBBBBBB                                                                   ",
+                "                                                  BBBBBBBBBBB                                               C  C                            ",
+                "                        BBB                                                                             GGGGGGGGGG                          ",
+                "                       BBBB                                                                                                                 ",
+                "                      BBBBB              HHH                              H                   P   P                                       F ",
+                "                     BBBBBB                                                                   p                                           G ",
+                "       E            BBBBBBB                                                          E        p                              E            G ",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGG                    GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGG                    GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGG                    GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGG    GGGGGGGGGGGGGGGGGG                    GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+            ],
+            [
+                "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",                                                                                                                                                             
+                "B                                                                                                                                                           B",
+                "B                                                                                                                                                           B",
+                "B                                                                                                                                                           B",
+                "B                                                                                                                                                           B",
+                "B              C  C  C  C                                                                                     C C C                                         B",
+                "B            BBBBBBBBBBBBBB       HHH         B?M?BBBBBBBB                                                  BBBBBBBBB                                       B",
+                "B                                            BBBBBBBBBBBBBB                                                                                                 B",
+                "B                                                                                 BBBBB            P                                                         B",
+                "B      P                                                                          BBBBB            p                                                       F B",
+                "B      p                                                    H                     BBBBB            p                                                       G B",
+                "B      p  E                                                                                        p                E                                      G B",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG          GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG          GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG          GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG          GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG          GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG          GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+            ],
+            [
+                "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                "B                                                                                                                                                                                                    B",
+                "B                   C C C                                                     B?M?B                                             C C C                                                                B",
+                "B                  BBBBBBB              BBBBB                                 BBBBB                                            BBBBBBB                                                               B",
+                "B                                       BBBBB                                 BBBBB                                                                                                                  B",
+                "B            BBBBB           BBBBB      BBBBB       BBBBB                     BBBBB       BBBBB                 BBBBB                     BBBBB                                                      B",
+                "B            BBBBB           BBBBB      BBBBB       BBBBB                                 BBBBB                 BBBBB                     BBBBB                                                    F B",
+                "B       P    BBBBB           BBBBB                  BBBBB            H                    BBBBB                 BBBBB                     BBBBB                                                    G B",
+                "B       p    BBBBB    E      BBBBB     E            BBBBB                                             E         BBBBB       E             BBBBB       E                                            G B",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG                  GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG                  GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG                  GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG                  GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG                  GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG                  GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+            ]
+        ];
+
+        function showRoadmap() {
+            gameState = 'roadmap';
+            document.getElementById('splash-screen').style.display = 'none';
+            document.getElementById('roadmap-screen').style.display = 'flex';
+        }
+
+        function backToMapHub() {
+            gameState = 'roadmap';
+            document.getElementById('gameover-screen').style.display = 'none';
+            document.getElementById('win-screen').style.display = 'none';
+            document.getElementById('roadmap-screen').style.display = 'flex';
+        }
+
+        function launchGameLevel(idx) {
+            currentLevelIndex = idx;
+            gameState = 'playing';
+            document.getElementById('roadmap-screen').style.display = 'none';
+            document.getElementById('gameover-screen').style.display = 'none';
+            document.getElementById('win-screen').style.display = 'none';
+            loadLevelAssetArrays(idx);
+        }
+
+        function loadLevelAssetArrays(idx) {
+            tiles = [];
+            enemies = [];
+            coins = [];
+            items = [];
+            platforms = [];
+            floatingTexts = [];
+            cameraX = 0;
+            globalCoins = 0;
+
+            player.isSuper = false;
+            player.h = 32;
+
+            const template = mapsData[idx];
+            levelMapWidth = template[0].length * TILE_SIZE;
+
+            for (let row = 0; row < template.length; row++) {
+                for (let col = 0; col < template[row].length; col++) {
+                    let token = template[row][col];
+                    let tx = col * TILE_SIZE;
+                    let ty = row * TILE_SIZE;
+
+                    if (token === 'G' || token === 'B' || token === '?' || token === 'M') {
+                        tiles.push({ x: tx, y: ty, w: TILE_SIZE, h: TILE_SIZE, type: token, state: 0, bumpY: 0 });
+                    } else if (token === 'P') {
+                        tiles.push({ x: tx, y: ty, w: TILE_SIZE * 1.5, h: TILE_SIZE, type: 'P' });
+                    } else if (token === 'p') {
+                        tiles.push({ x: tx + 4, y: ty, w: (TILE_SIZE * 1.5) - 8, h: TILE_SIZE, type: 'p' });
+                    } else if (token === 'E') {
+                        let baseSpeed = 1.3 + (idx * 0.2);
+                        enemies.push({
+                            x: tx,
+                            y: ty + 4,
+                            w: 24,
+                            h: 28,
+                            vx: -baseSpeed,
+                            baseSpeed: baseSpeed,
+                            isDying: false,
+                            dieTimer: 0,
+                            shielded: false,
+                            shieldTimer: 0,
+                            speedBoostTimer: 0
+                        });
+                    } else if (token === 'C') {
+                        coins.push({ x: tx + 8, y: ty + 8, w: 16, h: 16, pulse: Math.random() * 10 });
+                    } else if (token === 'H') {
+                        platforms.push({ x: tx, y: ty, w: 64, h: 16, startX: tx, dir: 1, range: 96, speed: 1.2 });
+                    } else if (token === 'F') {
+                        flagPole = { x: tx + 12, y: ty - TILE_SIZE * 5, w: 6, h: TILE_SIZE * 6 };
+                    }
+                }
+            }
+
+            let interactiveBoxes = tiles.filter(t => t.type === '?' || t.type === 'M').length;
+            totalLevelCoins = coins.length + interactiveBoxes;
+
+            player.x = 100;
+            player.y = 200;
+            player.vx = 0;
+            player.vy = 0;
+            player.grounded = false;
+
+            refreshDashboardHUD();
+        }
+
+        function refreshDashboardHUD() {
+            document.getElementById('hud-lvl').innerText = (currentLevelIndex + 1);
+            document.getElementById('hud-coins').innerText = String(globalCoins).padStart(2, '0');
+            document.getElementById('hud-total-coins').innerText = String(totalLevelCoins).padStart(2, '0');
+            document.getElementById('hud-lives').innerText = globalLives;
+            document.getElementById('hud-status').innerText = player.isSuper ? "SUPER" : "SMALL";
+            document.getElementById('hud-status').style.color = player.isSuper ? "#ff4757" : "#ffb800";
+        }
+
+        function intersects(r1, r2) {
+            return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
+        }
+
+        function deployTextBubble(x, y, str, color = '#fff') {
+            floatingTexts.push({ x: x, y: y, text: str, color: color, life: 35 });
+        }
+
+        function triggerInteractiveBlock(t, sidePressed) {
+            if (t.state !== 0) return;
+            t.state = 1;
+            t.bumpY = sidePressed === 'top' ? 6 : -8;
+            globalCoins++;
+            refreshDashboardHUD();
+
+            if (t.type === 'M') {
+                items.push({ x: t.x, y: t.y - 24, w: 24, h: 24, vx: 1.5, vy: 0, type: 'mushroom' });
+                sound(440, 'sine', 0.2);
+                deployTextBubble(t.x, t.y - 12, "MUSHROOM!", "#ff4757");
+            } else {
+                sound(523, 'sine', 0.08);
+                deployTextBubble(t.x, t.y - 12, "+1 COIN", "#ffd32a");
+            }
+        }
+
+        function updateRuntimeEngine() {
+            if (gameState !== 'playing') return;
+
+            if (player.invincibleTimer > 0) player.invincibleTimer--;
+
+            if (keys['a'] || keys['arrowleft']) {
+                player.vx -= 0.45;
+                if (player.vx < -player.speed) player.vx = -player.speed;
+                player.facing = 'left';
+            } else if (keys['d'] || keys['arrowright']) {
+                player.vx += 0.45;
+                if (player.vx > player.speed) player.vx = player.speed;
+                player.facing = 'right';
+            } else {
+                player.vx *= FRICTION;
+                if (Math.abs(player.vx) < 0.1) player.vx = 0;
+            }
+
+            if ((keys['w'] || keys[' '] || keys['arrowup']) && player.grounded) {
+                player.vy = -player.jumpForce;
+                player.grounded = false;
+                sound(380, 'square', 0.12);
+            }
+
+            player.vy += GRAVITY;
+            player.x += player.vx;
+            if (player.x < 0) player.x = 0;
+
+            tiles.forEach(t => {
+                if (intersects(player, t)) {
+                    if (player.vx > 0 && player.x + player.w - player.vx <= t.x) {
+                        player.x = t.x - player.w;
+                        player.vx = 0;
+                    } else if (player.vx < 0 && player.x - player.vx >= t.x + t.w) {
+                        player.x = t.x + t.w;
+                        player.vx = 0;
+                    }
+                }
+            });
+
+            player.y += player.vy;
+            player.grounded = false;
+
+            tiles.forEach(t => {
+                if (intersects(player, t)) {
+                    if (player.vy > 0 && player.y + player.h - player.vy <= t.y + 8) {
+                        player.y = t.y - player.h;
+                        player.vy = 0;
+                        player.grounded = true;
+
+                        if ((t.type === '?' || t.type === 'M') && t.state === 0) {
+                            triggerInteractiveBlock(t, 'top');
+                        }
+                    } else if (player.vy < 0 && player.y - player.vy >= t.y + t.h - 8) {
+                        player.y = t.y + t.h;
+                        player.vy = 0.8;
+
+                        if ((t.type === '?' || t.type === 'M') && t.state === 0) {
+                            triggerInteractiveBlock(t, 'bottom');
+                        } else if (t.type === 'B') {
+                            if (player.isSuper) {
+                                tiles = tiles.filter(tile => tile !== t);
+                                sound(180, 'triangle', 0.15);
+                                deployTextBubble(t.x, t.y, "SMASH!", "#ff4757");
+                            } else {
+                                t.bumpY = -6;
+                                sound(120, 'square', 0.05);
+                            }
+                        }
+                    }
+                }
+                if (t.bumpY < 0) t.bumpY += 1.5;
+                if (t.bumpY > 0) t.bumpY -= 1.5;
+            });
+
+            platforms.forEach(p => {
+                p.x += p.speed * p.dir;
+                if (Math.abs(p.x - p.startX) > p.range) {
+                    p.dir *= -1;
+                }
+
+                if (player.x + player.w > p.x && player.x < p.x + p.w &&
+                    player.y + player.h - player.vy <= p.y + 6 && player.y + player.h + 2 >= p.y) {
+                    player.y = p.y - player.h;
+                    player.vy = 0;
+                    player.grounded = true;
+                    player.x += p.speed * p.dir;
+                }
+            });
+
+            // Mushroom-enemy interaction
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                if (item.type === 'mushroom') {
+                    for (let enemy of enemies) {
+                        if (!enemy.isDying && intersects(item, enemy)) {
+                            items.splice(i, 1);
+                            enemy.shielded = true;
+                            enemy.shieldTimer = 300;
+                            enemy.speedBoostTimer = 180;
+                            enemy.baseSpeed = Math.abs(enemy.vx);
+                            enemy.vx = (enemy.vx > 0 ? 1 : -1) * enemy.baseSpeed * 1.5;
+                            sound(220, 'sawtooth', 0.3);
+                            deployTextBubble(enemy.x, enemy.y - 10, "SHIELD!", "#ff4757");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Update items (mushrooms)
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                item.vy += GRAVITY;
+                item.x += item.vx;
+
+                tiles.forEach(t => {
+                    if (intersects(item, t)) {
+                        if (item.vx > 0) {
+                            item.x = t.x - item.w;
+                            item.vx *= -1;
+                        } else if (item.vx < 0) {
+                            item.x = t.x + t.w;
+                            item.vx *= -1;
+                        }
+                    }
+                });
+
+                item.y += item.vy;
+                tiles.forEach(t => {
+                    if (intersects(item, t)) {
+                        if (item.vy > 0) {
+                            item.y = t.y - item.h;
+                            item.vy = 0;
+                        }
+                    }
+                });
+
+                if (intersects(player, item)) {
+                    if (item.type === 'mushroom') {
+                        player.isSuper = true;
+                        player.h = 42;
+                        sound(880, 'sine', 0.3);
+                        deployTextBubble(player.x, player.y - 15, "SUPER STATUS!", "#ff4757");
+                        refreshDashboardHUD();
+                    }
+                    items.splice(i, 1);
+                }
+            }
+
+            enemies.forEach((enemy, idx) => {
+                if (enemy.isDying) {
+                    enemy.dieTimer--;
+                    if (enemy.dieTimer <= 0) enemies.splice(idx, 1);
+                    return;
+                }
+
+                // Shield and speed boost timers
+                if (enemy.shieldTimer > 0) {
+                    enemy.shieldTimer--;
+                    if (enemy.shieldTimer <= 0) enemy.shielded = false;
+                }
+                if (enemy.speedBoostTimer > 0) {
+                    enemy.speedBoostTimer--;
+                    if (enemy.speedBoostTimer <= 0) {
+                        enemy.vx = (enemy.vx > 0 ? 1 : -1) * enemy.baseSpeed;
+                    }
+                }
+
+                enemy.x += enemy.vx;
+
+                tiles.forEach(t => {
+                    if (intersects(enemy, t)) {
+                        enemy.vx *= -1;
+                        enemy.x += enemy.vx;
+                    }
+                });
+
+                if (intersects(player, enemy)) {
+                    // Stomp check
+                    if (player.vy > 0 && player.y + player.h - player.vy <= enemy.y + 12) {
+                        if (enemy.shielded) {
+                            // Shielded enemy cannot be stomped, damages player
+                            if (player.invincibleTimer === 0) {
+                                if (player.isSuper) {
+                                    player.isSuper = false;
+                                    player.h = 32;
+                                    player.invincibleTimer = 60;
+                                    sound(220, 'sawtooth', 0.4);
+                                    deployTextBubble(player.x, player.y - 15, "SHRINK!", "#ffb800");
+                                    refreshDashboardHUD();
+                                } else {
+                                    registerFailDeath();
+                                }
+                            }
+                        } else {
+                            enemy.isDying = true;
+                            enemy.dieTimer = 12;
+                            player.vy = -8.5;
+                            sound(150, 'triangle', 0.1);
+                            deployTextBubble(enemy.x, enemy.y, "STOMP!", "#00f0ff");
+                        }
+                    } else if (player.invincibleTimer === 0) {
+                        if (player.isSuper) {
+                            player.isSuper = false;
+                            player.h = 32;
+                            player.invincibleTimer = 60;
+                            sound(220, 'sawtooth', 0.4);
+                            deployTextBubble(player.x, player.y - 15, "SHRINK!", "#ffb800");
+                            refreshDashboardHUD();
+                        } else {
+                            registerFailDeath();
+                        }
+                    }
+                }
+            });
+
+            for (let i = coins.length - 1; i >= 0; i--) {
+                if (intersects(player, coins[i])) {
+                    coins.splice(i, 1);
+                    globalCoins++;
+                    sound(659, 'sine', 0.05);
+                    sound(987, 'sine', 0.12);
+                    refreshDashboardHUD();
+                }
+            }
+
+            if (player.x + player.w >= flagPole.x && player.x <= flagPole.x + flagPole.w && player.y + player.h >= flagPole.y) {
+                if (globalCoins >= totalLevelCoins) {
+                    executeStageVictory();
+                } else {
+                    deployTextBubble(flagPole.x - 50, player.y - 20, "COLLECT ALL COINS!", "#ff3838");
+                    player.x = flagPole.x - player.w - 6;
+                }
+            }
+
+            if (player.y > VIRTUAL_HEIGHT + 50) registerFailDeath();
+
+            let cameraTarget = player.x - 200;
+            cameraX += (cameraTarget - cameraX) * 0.15;
+            cameraX = Math.max(0, Math.min(cameraX, levelMapWidth - (window.innerWidth / viewScale)));
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].y -= 0.5;
+                floatingTexts[i].life--;
+                if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            if (Math.abs(player.vx) > 0.1 && player.grounded) {
+                player.walkFrame = (player.walkFrame + 0.2) % 4;
+            } else {
+                player.walkFrame = 0;
+            }
+        }
+
+        function registerFailDeath() {
+            globalLives--;
+            refreshDashboardHUD();
+            if (globalLives <= 0) {
+                gameState = 'gameover';
+                document.getElementById('gameover-screen').style.display = 'flex';
+            } else {
+                loadLevelAssetArrays(currentLevelIndex);
+            }
+        }
+
+        function executeStageVictory() {
+            gameState = 'victory';
+            sound(523, 'square', 0.1);
+            sound(659, 'square', 0.1);
+            sound(783, 'square', 0.3);
+            document.getElementById('win-screen').style.display = 'flex';
+            if (currentLevelIndex >= mapsData.length - 1) {
+                document.getElementById('next-action-btn').innerText = "COMPLETE CAMPAIGN";
+            } else {
+                document.getElementById('next-action-btn').innerText = "NEXT LEVEL";
+            }
+        }
+
+        function advanceNextSequence() {
+            if (currentLevelIndex < mapsData.length - 1) {
+                launchGameLevel(currentLevelIndex + 1);
+            } else {
+                globalLives = 3;
+                globalCoins = 0;
+                backToMapHub();
+            }
+        }
+
+        function renderSceneryGradients(ctx) {
+            let idx = currentLevelIndex;
+            ctx.imageSmoothingEnabled = false;
+
+            // Sky gradients
+            if (idx === 0 || idx === 1 || idx === 2) {
+                let sky = ctx.createLinearGradient(0, 0, 0, VIRTUAL_HEIGHT);
+                sky.addColorStop(0, '#4facfe');
+                sky.addColorStop(1, '#00f2fe');
+                ctx.fillStyle = sky;
+                ctx.fillRect(0, 0, window.innerWidth / viewScale, VIRTUAL_HEIGHT);
+
+                // Sun
+                ctx.fillStyle = '#ffdd59';
+                ctx.beginPath();
+                ctx.arc(650, 90, 40, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffc048';
+                ctx.beginPath();
+                ctx.arc(650, 90, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Clouds
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.beginPath();
+                ctx.ellipse(200, 70, 80, 30, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(280, 50, 60, 25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(500, 100, 70, 20, 0, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (idx === 3) {
+                let night = ctx.createLinearGradient(0, 0, 0, VIRTUAL_HEIGHT);
+                night.addColorStop(0, '#0b0b2a');
+                night.addColorStop(1, '#1b1c4b');
+                ctx.fillStyle = night;
+                ctx.fillRect(0, 0, window.innerWidth / viewScale, VIRTUAL_HEIGHT);
+
+                // Moon
+                ctx.fillStyle = '#f7f1e3';
+                ctx.beginPath();
+                ctx.arc(420, 80, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#0b0b2a';
+                ctx.beginPath();
+                ctx.arc(435, 70, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Stars
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 40; i++) {
+                    let sx = (i * 137 + 80) % 900;
+                    let sy = (i * 73 + 30) % 200;
+                    ctx.fillRect(sx, sy, 2, 2);
+                }
+            } else {
+                // Fortress level 4: red/crimson sky with fortress silhouette and lava
+                let castle = ctx.createLinearGradient(0, 0, 0, VIRTUAL_HEIGHT);
+                castle.addColorStop(0, '#2d0a13');
+                castle.addColorStop(1, '#0c0205');
+                ctx.fillStyle = castle;
+                ctx.fillRect(0, 0, window.innerWidth / viewScale, VIRTUAL_HEIGHT);
+
+                // Fortress silhouette (towers)
+                ctx.fillStyle = '#1a0a0f';
+                ctx.fillRect(100, 80, 40, 150);
+                ctx.fillRect(140, 60, 30, 170);
+                ctx.fillRect(180, 100, 50, 130);
+                ctx.fillRect(240, 70, 30, 160);
+                ctx.fillRect(270, 90, 40, 140);
+                ctx.fillStyle = '#3a1a1a';
+                ctx.fillRect(120, 75, 15, 10);
+                ctx.fillRect(250, 65, 15, 10);
+
+                // Lava lake at bottom
+                let lava = ctx.createLinearGradient(0, VIRTUAL_HEIGHT - 40, 0, VIRTUAL_HEIGHT);
+                lava.addColorStop(0, '#ff4500');
+                lava.addColorStop(1, '#8b0000');
+                ctx.fillStyle = lava;
+                ctx.fillRect(0, VIRTUAL_HEIGHT - 40, window.innerWidth / viewScale, 40);
+
+                // Lava bubbles
+                ctx.fillStyle = '#ff7f50';
+                for (let i = 0; i < 15; i++) {
+                    let bx = (i * 173 + 40) % 900;
+                    let by = VIRTUAL_HEIGHT - 20 + Math.sin(Date.now() * 0.01 + i) * 5;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawTile(ctx, t) {
+            let by = t.bumpY;
+            if (t.type === 'G') {
+                let g = ctx.createLinearGradient(t.x, t.y, t.x, t.y + t.h);
+                if (currentLevelIndex === 0) {
+                    g.addColorStop(0, '#6ab04c');
+                    g.addColorStop(1, '#2e5a1e');
+                } else if (currentLevelIndex === 1) {
+                    g.addColorStop(0, '#78e08f');
+                    g.addColorStop(1, '#38ada9');
+                } else if (currentLevelIndex === 2) {
+                    g.addColorStop(0, '#82ccdd');
+                    g.addColorStop(1, '#3c6382');
+                } else if (currentLevelIndex === 3) {
+                    g.addColorStop(0, '#535c68');
+                    g.addColorStop(1, '#2f3640');
+                } else {
+                    g.addColorStop(0, '#4a2c2c');
+                    g.addColorStop(1, '#1e0f0f');
+                }
+                ctx.fillStyle = g;
+                ctx.fillRect(t.x, t.y + by, t.w, t.h);
+                // Natural top edge
+                if (currentLevelIndex === 0 || currentLevelIndex === 1) {
+                    ctx.fillStyle = '#b8e994';
+                } else if (currentLevelIndex === 2) {
+                    ctx.fillStyle = '#60a3bc';
+                } else if (currentLevelIndex === 3) {
+                    ctx.fillStyle = '#7f8fa6';
+                } else {
+                    ctx.fillStyle = '#ff6348';
+                }
+                ctx.fillRect(t.x, t.y + by, t.w, 3);
+            } else if (t.type === 'B') {
+                ctx.fillStyle = '#b33939';
+                ctx.fillRect(t.x, t.y + by, t.w, t.h);
+                ctx.strokeStyle = '#222';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(t.x, t.y + by, t.w, t.h);
+            } else if (t.type === '?' || t.type === 'M') {
+                let itemG = ctx.createLinearGradient(t.x, t.y, t.x, t.y + t.h);
+                if (t.state === 0) {
+                    itemG.addColorStop(0, '#ffa502');
+                    itemG.addColorStop(1, '#ff4757');
+                } else {
+                    itemG.addColorStop(0, '#57606f');
+                    itemG.addColorStop(1, '#2f3542');
+                }
+                ctx.fillStyle = itemG;
+                ctx.fillRect(t.x, t.y + by, t.w, t.h);
+                if (t.state === 0) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 15px monospace';
+                    ctx.fillText('?', t.x + 11, t.y + 22 + by);
+                }
+            } else if (t.type === 'P' || t.type === 'p') {
+                let pipeG = ctx.createLinearGradient(t.x, t.y, t.x + t.w, t.y);
+                pipeG.addColorStop(0, '#10ac84');
+                pipeG.addColorStop(0.5, '#1dd1a1');
+                pipeG.addColorStop(1, '#0b8a67');
+                ctx.fillStyle = pipeG;
+                ctx.fillRect(t.x, t.y, t.w, t.h);
+            }
+        }
+
+        function drawPlayer(ctx, p) {
+            if (p.invincibleTimer % 4 > 2) return;
+
+            ctx.save();
+            ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+            if (p.facing === 'left') ctx.scale(-1, 1);
+
+            let animOffset = (p.grounded && Math.abs(p.vx) > 0.1) ? Math.sin(p.walkFrame) * 3 : 0;
+            let bodyH = p.isSuper ? 42 : 32;
+            let originY = -bodyH / 2;
+
+            ctx.fillStyle = '#1e272e';
+            ctx.fillRect(-8, originY + bodyH - 5 + Math.min(0, animOffset), 6, 5);
+            ctx.fillRect(2, originY + bodyH - 5 + Math.max(0, animOffset), 6, 5);
+
+            ctx.fillStyle = '#002fbe';
+            ctx.fillRect(-7, originY + bodyH - 18, 14, 14);
+            ctx.fillRect(-5, originY + bodyH - 22, 3, 4);
+            ctx.fillRect(2, originY + bodyH - 22, 3, 4);
+
+            ctx.fillStyle = '#e52521';
+            ctx.fillRect(-9, originY + bodyH - 22, 2, 9);
+            ctx.fillRect(7, originY + bodyH - 22, 2, 9);
+            ctx.fillRect(-4, originY + bodyH - 22, 8, 4);
+
+            ctx.fillStyle = '#fcc082';
+            ctx.fillRect(-5, originY + bodyH - 30, 10, 9);
+            ctx.fillRect(3, originY + bodyH - 28, 3, 3);
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(1, originY + bodyH - 25, 5, 2);
+
+            ctx.fillStyle = '#e52521';
+            ctx.fillRect(-6, originY + bodyH - 33, 12, 4);
+            ctx.fillRect(-4, originY + bodyH - 35, 9, 3);
+            ctx.fillRect(2, originY + bodyH - 31, 5, 1.5);
+
+            ctx.restore();
+        }
+
+        function drawEnemy(ctx, e) {
+            if (e.isDying) {
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(e.x, e.y + 22, e.w, 6);
+                return;
+            }
+
+            // Shield indicator
+            if (e.shielded) {
+                ctx.save();
+                ctx.strokeStyle = '#ff4757';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(e.x + e.w / 2, e.y + e.h / 2, e.w / 2 + 4, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.fillStyle = '#a1522e';
+            ctx.beginPath();
+            ctx.moveTo(e.x, e.y + 16);
+            ctx.lineTo(e.x + e.w, e.y + 16);
+            ctx.lineTo(e.x + e.w - 2, e.y + 2);
+            ctx.lineTo(e.x + 2, e.y + 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillRect(e.x - 2, e.y + 8, e.w + 4, 8);
+
+            ctx.fillStyle = '#f5cd79';
+            ctx.fillRect(e.x + 4, e.y + 14, e.w - 8, 10);
+
+            ctx.fillStyle = '#2f3542';
+            ctx.fillRect(e.x + 4, e.y + 9, 5, 3);
+            ctx.fillRect(e.x + e.w - 9, e.y + 9, 5, 3);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(e.x + 5, e.y + 12, 3, 4);
+            ctx.fillRect(e.x + e.w - 8, e.y + 12, 3, 4);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(e.x + 6, e.y + 12, 2, 3);
+            ctx.fillRect(e.x + e.w - 8, e.y + 12, 2, 3);
+
+            ctx.fillStyle = '#1e272e';
+            ctx.fillRect(e.x + 2, e.y + 24, 7, 4);
+            ctx.fillRect(e.x + e.w - 9, e.y + 24, 7, 4);
+        }
+
+        function mainRenderPipeline() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            renderSceneryGradients(ctx);
+
+            ctx.save();
+            ctx.translate(-Math.floor(cameraX), 0);
+
+            ctx.fillStyle = '#ced6e0';
+            ctx.fillRect(flagPole.x, flagPole.y, flagPole.w, flagPole.h);
+            ctx.fillStyle = '#e52521';
+            ctx.beginPath();
+            ctx.moveTo(flagPole.x + flagPole.w, flagPole.y + 4);
+            ctx.lineTo(flagPole.x + flagPole.w + 24, flagPole.y + 14);
+            ctx.lineTo(flagPole.x + flagPole.w, flagPole.y + 24);
+            ctx.fill();
+
+            tiles.forEach(t => drawTile(ctx, t));
+            platforms.forEach(p => {
+                ctx.fillStyle = '#747d8c';
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = '#57606f';
+                ctx.fillRect(p.x, p.y, p.w, 3);
+            });
+
+            coins.forEach(c => {
+                c.pulse += 0.1;
+                let wScale = 14 + Math.sin(c.pulse) * 3;
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.ellipse(c.x + 8, c.y + 8, wScale / 2, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FFF7A3';
+                ctx.beginPath();
+                ctx.ellipse(c.x + 8, c.y + 8, (wScale / 2) * 0.4, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            items.forEach(item => {
+                if (item.type === 'mushroom') {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.beginPath();
+                    ctx.arc(item.x + 12, item.y + 10, 10, Math.PI, 0);
+                    ctx.fill();
+                    ctx.fillStyle = '#f1f2f6';
+                    ctx.fillRect(item.x + 4, item.y + 10, 16, 10);
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(item.x + 7, item.y + 12, 2, 4);
+                    ctx.fillRect(item.x + 15, item.y + 12, 2, 4);
+                }
+            });
+
+            enemies.forEach(e => drawEnemy(ctx, e));
+            if (gameState === 'playing') drawPlayer(ctx, player);
+
+            floatingTexts.forEach(ft => {
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText(ft.text, ft.x, ft.y);
+            });
+
+            ctx.restore();
+        }
+
+        function globalGameLoop() {
+            updateRuntimeEngine();
+            mainRenderPipeline();
+            requestAnimationFrame(globalGameLoop);
+        }
+
+        globalGameLoop();
+    </script>
+</body>
+</html>
